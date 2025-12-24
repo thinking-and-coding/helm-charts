@@ -112,6 +112,7 @@ Check the [examples/](examples/) directory for complete configuration examples:
 - [Configuration Reference](docs/configuration.md) - Complete parameter reference
 - [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 - [Upgrade Guide](docs/upgrade.md) - Version upgrade instructions
+- [Auto-Update Setup](docs/auto-update.md) - Automated version tracking and releases
 
 ## Key Configuration Parameters
 

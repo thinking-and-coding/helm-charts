@@ -53,6 +53,32 @@ ct install --config .github/ct.yaml --all
 4. Create and push tag: `git tag v0.x.x && git push origin v0.x.x`
 5. GitHub Actions automatically packages and publishes the chart
 
+### Auto-Update Workflow
+
+The repository includes automated tracking of LinuxServer.io Obsidian Docker releases:
+
+```bash
+# Setup auto-update (requires gh CLI)
+./scripts/setup-auto-update.sh
+
+# Manually trigger update check
+gh workflow run auto-update.yaml
+
+# Check workflow status
+gh run list --workflow=auto-update.yaml
+```
+
+**Workflow behavior:**
+- Runs daily at 00:00 UTC (configurable via cron)
+- Checks for new LinuxServer.io Docker image releases
+- Compares with current `appVersion` in Chart.yaml
+- If update found:
+  - Sends email notification with changelog (if configured)
+  - Auto-increments chart patch version
+  - Either creates PR for review OR auto-commits and tags (based on `AUTO_MERGE` setting)
+
+**Configuration:** See `docs/auto-update.md` for detailed setup instructions.
+
 ## Architecture
 
 ### Chart Structure
