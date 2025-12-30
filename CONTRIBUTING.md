@@ -94,7 +94,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 ```bash
 # Clone your fork
 git clone https://github.com/YOUR-USERNAME/obsidian-helm-chart.git
-cd obsidian-helm-chart
+cd helm-charts
 
 # Add upstream remote
 git remote add upstream https://github.com/thinking-and-coding/obsidian-helm-chart.git

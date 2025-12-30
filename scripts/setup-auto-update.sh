@@ -189,10 +189,10 @@ fi
 
 echo "🧪 Test the setup:"
 echo "   1. Manually trigger the workflow:"
-echo "      gh workflow run auto-update.yaml"
+echo "      gh workflow run auto-update-obsidian.yaml"
 echo ""
 echo "   2. Check workflow status:"
-echo "      gh run list --workflow=auto-update.yaml"
+echo "      gh run list --workflow=auto-update-obsidian.yaml"
 echo ""
 echo "   3. View workflow logs:"
 echo "      gh run view --log"

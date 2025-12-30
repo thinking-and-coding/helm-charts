@@ -1,155 +1,164 @@
-# Auto-Update Configuration
+# Scripts
 
-This directory contains scripts for configuring the auto-update workflow.
+Utility scripts for repository management and automation.
 
-## Quick Start - No Configuration Needed! ✅
+## Available Scripts
 
-The easiest way to receive notifications is to use **GitHub's native notification system**:
+### `setup-auto-update.sh`
 
-1. **Watch this repository:**
-   - Go to the repository page
-   - Click "Watch" → "All Activity"
-   - Done! You'll receive GitHub emails automatically
+Interactive script to configure automated version tracking for charts.
 
-2. **Configure notifications (optional):**
-   ```bash
-   # Run the interactive setup script
-   ./scripts/setup-auto-update.sh
+**Purpose:**
+- Configures GitHub Actions workflow variables and secrets
+- Sets up notification preferences (GitHub Issues, Email, or both)
+- Configures auto-merge behavior
 
-   # Select "1" for GitHub Notifications Only (recommended)
-   ```
+**Usage:**
+```bash
+# Run interactively
+./scripts/setup-auto-update.sh
 
-## Notification Methods
+# For a specific chart (if applicable)
+CHART_NAME=obsidian ./scripts/setup-auto-update.sh
+```
 
-### Method 1: GitHub Notifications (Recommended) ✅
+**What it configures:**
 
-**Advantages:**
-- ✅ Zero configuration required
-- ✅ No SMTP credentials needed
-- ✅ Integrated with GitHub
-- ✅ Automatic email via GitHub
-- ✅ More secure
+1. **Notification Method**:
+   - GitHub Issues (default, zero config)
+   - Email notifications (requires SMTP settings)
+   - Both
 
-**How it works:**
-- New releases create a GitHub Issue with full changelog
-- Pull Requests are created automatically
-- @mentions notify specific users
-- GitHub sends emails to all watchers
+2. **Auto-Update Behavior**:
+   - PR Mode: Creates pull request for review (default, recommended)
+   - Auto-Merge: Automatically commits and tags
 
-### Method 2: Direct Email (Optional)
+3. **Secrets** (for email notifications):
+   - `MAIL_SERVER`: SMTP server address
+   - `MAIL_PORT`: SMTP port (default: 587)
+   - `MAIL_USERNAME`: SMTP username
+   - `MAIL_PASSWORD`: SMTP password
+   - `MAIL_FROM`: From email address
 
-For sending emails to external addresses not linked to GitHub accounts.
+4. **Variables**:
+   - `NOTIFICATION_EMAIL`: Email recipient
+   - `AUTO_MERGE`: Enable auto-merge mode ('true'/'false')
+   - `DISABLE_ISSUE_NOTIFICATION`: Disable GitHub Issues
+   - `PR_REVIEWERS`: GitHub usernames for PR review
+   - `PR_MENTIONS`: Additional users to mention
+   - `ISSUE_ASSIGNEES`: Users to assign issues to
 
-**Required:**
-- SMTP server credentials
-- Run setup script and select option "2"
+**Prerequisites:**
+- [GitHub CLI](https://cli.github.com/) installed and authenticated
+- Repository permissions to modify secrets/variables
 
-## Setup Script
+**Currently supports:**
+- Obsidian chart auto-update
 
-The interactive setup script supports both methods:
+**Adding support for other charts:**
+Update the script to reference the appropriate workflow file for each chart.
+
+## Future Scripts
+
+Planned utility scripts:
+
+- **`create-chart.sh`**: Scaffold a new chart with standard structure
+- **`bump-version.sh`**: Automate chart version bumping
+- **`validate-chart.sh`**: Pre-commit validation script
+- **`generate-docs.sh`**: Auto-generate documentation from values.yaml
+
+## Development
+
+### Adding New Scripts
+
+1. Create script in `scripts/` directory
+2. Make executable: `chmod +x scripts/your-script.sh`
+3. Add usage documentation here
+4. Test thoroughly before committing
+
+### Script Guidelines
+
+- Use `#!/bin/bash` shebang
+- Include usage/help message
+- Validate prerequisites
+- Provide clear error messages
+- Support dry-run mode where applicable
+- Document all environment variables
+
+## Usage Examples
+
+### Setup Auto-Update for Obsidian
 
 ```bash
 ./scripts/setup-auto-update.sh
 ```
 
-**Features:**
-- Interactive configuration
-- Auto-detects GitHub CLI
-- Sets all variables and secrets
-- Validates authentication
-- Provides testing instructions
+Follow the interactive prompts to configure:
+1. Notification method
+2. SMTP settings (if using email)
+3. Auto-merge preference
+4. GitHub credentials for setting secrets/variables
 
-## Manual Configuration
-
-### GitHub Notifications Only
-
-Set these repository variables (all optional):
+### Verify Configuration
 
 ```bash
-gh variable set PR_MENTIONS --body "@user1 @user2"
-gh variable set ISSUE_ASSIGNEES --body "user1,user2"
-gh variable set PR_REVIEWERS --body "user1,user2"
+# Check repository variables
+gh variable list
+
+# Check repository secrets (names only)
+gh secret list
+
+# Test workflow manually
+gh workflow run auto-update-obsidian.yaml
+
+# Check workflow run status
+gh run list --workflow=auto-update-obsidian.yaml
 ```
-
-### Adding Email Notifications
-
-Set these repository secrets:
-
-| Secret Name | Description | Example |
-|------------|-------------|---------|
-| `MAIL_SERVER` | SMTP server | `smtp.gmail.com` |
-| `MAIL_PORT` | SMTP port | `587` |
-| `MAIL_USERNAME` | SMTP username | `user@gmail.com` |
-| `MAIL_PASSWORD` | SMTP password | `app-password` |
-| `MAIL_FROM` | From address | `user@gmail.com` |
-
-And variable:
-
-```bash
-gh variable set NOTIFICATION_EMAIL --body "external@example.com"
-```
-
-## Common SMTP Providers
-
-### Gmail
-
-1. Enable 2-Step Verification
-2. Generate App Password at https://myaccount.google.com/apppasswords
-3. Configure:
-   - Server: `smtp.gmail.com`
-   - Port: `587`
-   - Use app password (not account password)
-
-### Outlook/Office 365
-
-- Server: `smtp.office365.com`
-- Port: `587`
-- Use account password
-
-### Other Providers
-
-See [docs/auto-update.md](../docs/auto-update.md) for SendGrid, Mailgun, AWS SES, etc.
-
-## Testing
-
-```bash
-# Trigger workflow manually
-gh workflow run auto-update.yaml
-
-# Check status
-gh run list --workflow=auto-update.yaml
-
-# View logs
-gh run view --log
-```
-
-## Configuration Options
-
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `PR_MENTIONS` | Users to @mention in PRs | (none) |
-| `ISSUE_ASSIGNEES` | Users to assign issues | (none) |
-| `PR_REVIEWERS` | PR reviewers | (none) |
-| `AUTO_MERGE` | Auto-commit to main | `false` |
-| `DISABLE_ISSUE_NOTIFICATION` | Only use PRs | `false` |
-| `NOTIFICATION_EMAIL` | Email for direct notifications | (none) |
 
 ## Troubleshooting
 
-### Not receiving GitHub notifications
+### "gh: command not found"
 
-1. Watch the repository: Watch → All Activity
-2. Check GitHub notification settings
-3. Verify email in GitHub account settings
+Install GitHub CLI:
+```bash
+# macOS
+brew install gh
 
-### Email not sending
+# Linux
+# See: https://github.com/cli/cli/blob/trunk/docs/install_linux.md
 
-1. Verify all MAIL_* secrets are set
-2. For Gmail, use App Password
-3. Check workflow logs for errors
+# Authenticate
+gh auth login
+```
 
-## See Also
+### Permission Denied
 
-- [Complete Documentation](../docs/auto-update.md)
-- [Workflow File](../.github/workflows/auto-update.yaml)
-- [GitHub Notifications Settings](https://github.com/settings/notifications)
+Make script executable:
+```bash
+chmod +x scripts/setup-auto-update.sh
+```
+
+### "Insufficient permissions"
+
+Ensure your GitHub token has:
+- `repo` scope (for secrets and variables)
+- `workflow` scope (for workflow dispatch)
+
+Re-authenticate:
+```bash
+gh auth refresh -s repo,workflow
+```
+
+## Related Documentation
+
+- [Auto-Update Documentation](../charts/obsidian/docs/auto-update.md) - Obsidian chart auto-update setup
+- [CI/CD Documentation](../docs/ci-cd.md) - GitHub Actions workflows
+- [Contributing Guide](../docs/contributing.md) - How to contribute
+
+## Support
+
+For script issues:
+1. Check script output for error messages
+2. Verify prerequisites are installed
+3. Review related documentation
+4. Open an issue with script output and environment details

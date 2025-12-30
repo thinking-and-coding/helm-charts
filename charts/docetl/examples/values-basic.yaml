@@ -1,0 +1,36 @@
+# Basic configuration for DocETL
+# Minimal setup for quick start
+
+# Backend configuration
+backend:
+  # REQUIRED: Set your OpenAI API key
+  # WARNING: Do not commit API keys to version control
+  openaiApiKey: "PLACEHOLDER_CHANGE_ME"
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+# Frontend configuration
+frontend:
+  service:
+    type: ClusterIP
+    port: 3000
+
+# Persistence for uploaded files and processing results
+persistence:
+  enabled: true
+  size: 10Gi
+  # storageClass: ""  # Uses cluster default
+
+# Ingress (disabled by default)
+ingress:
+  enabled: false
+  # Enable and configure for external access:
+  # enabled: true
+  # className: nginx
+  # hosts:
+  #   - host: docetl.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix

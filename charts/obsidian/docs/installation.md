@@ -38,7 +38,7 @@ helm install my-obsidian obsidian/obsidian \
 ```bash
 # Clone the repository
 git clone https://github.com/thinking-and-coding/obsidian-helm-chart.git
-cd obsidian-helm-chart
+cd helm-charts
 
 # Install from local chart
 helm install my-obsidian ./charts/obsidian

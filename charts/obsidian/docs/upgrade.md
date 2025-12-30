@@ -63,7 +63,7 @@ helm upgrade my-obsidian obsidian/obsidian \
 
 ```bash
 # Pull latest changes
-cd obsidian-helm-chart
+cd helm-charts
 git pull origin main
 
 # Upgrade

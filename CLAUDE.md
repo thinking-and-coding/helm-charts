@@ -4,90 +4,194 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Helm chart repository for deploying Obsidian (note-taking application) on Kubernetes using the LinuxServer.io Docker image with Selkies web-based GUI. The chart enables running Obsidian as a web application accessible via browser.
+This is a multi-chart Helm repository for deploying various applications on Kubernetes. The repository is structured to support multiple independent Helm charts, each with its own versioning, documentation, and examples.
+
+**Current Charts:**
+- **Obsidian**: Note-taking application using LinuxServer.io Docker image with Selkies web-based GUI
+- **DocETL**: Document processing pipeline with LLM operations (backend + frontend)
+
+The repository uses automated CI/CD pipelines for linting, testing, and releasing charts.
+
+## Repository Structure
+
+```
+helm-charts/
+├── charts/                     # All Helm charts
+│   ├── obsidian/              # Obsidian chart
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   ├── README.md
+│   │   ├── templates/
+│   │   ├── examples/          # Chart-specific examples
+│   │   └── docs/              # Chart-specific docs
+│   └── [other-charts]/        # Future charts
+├── docs/                       # Shared documentation
+│   ├── contributing.md
+│   ├── ci-cd.md
+│   └── repository-structure.md
+├── scripts/                    # Utility scripts
+└── .github/workflows/          # CI/CD pipelines
+    ├── lint-test.yaml         # Generic linting/testing
+    ├── release.yaml           # Generic releasing
+    └── auto-update-*.yaml     # Chart-specific auto-updates
+```
 
 ## Common Commands
 
-### Development and Testing
+### Working with Charts
+
+#### Chart Development
 
 ```bash
-# Lint the chart
-helm lint charts/obsidian/
+# Lint a specific chart
+helm lint charts/<chart-name>/
 
 # Template with default values
-helm template test charts/obsidian/
+helm template test charts/<chart-name>/
 
 # Template with example configurations
-helm template test charts/obsidian/ -f examples/values-production.yaml
-helm template test charts/obsidian/ -f examples/values-with-ingress.yaml
+helm template test charts/<chart-name>/ -f charts/<chart-name>/examples/values-production.yaml
 
 # Dry-run installation
-helm install test charts/obsidian/ --dry-run --debug
+helm install test charts/<chart-name>/ --dry-run --debug
+```
+
+#### Obsidian Chart Specific
+
+```bash
+# Lint the Obsidian chart
+helm lint charts/obsidian/
+
+# Template with examples
+helm template test charts/obsidian/ -f charts/obsidian/examples/values-production.yaml
+helm template test charts/obsidian/ -f charts/obsidian/examples/values-with-ingress.yaml
 
 # Install locally for testing
 helm install my-obsidian ./charts/obsidian
 
 # Install with custom values
-helm install my-obsidian ./charts/obsidian -f examples/values-production.yaml
+helm install my-obsidian ./charts/obsidian -f charts/obsidian/examples/values-production.yaml
+```
+
+#### DocETL Chart Specific
+
+```bash
+# Lint the DocETL chart
+helm lint charts/docetl/
+
+# Template with examples
+helm template test charts/docetl/ -f charts/docetl/examples/values-dev.yaml
+helm template test charts/docetl/ -f charts/docetl/examples/values-prod.yaml
+
+# Install locally for testing
+helm install my-docetl ./charts/docetl
+
+# Install with production values
+helm install my-docetl ./charts/docetl -f charts/docetl/examples/values-prod.yaml
 ```
 
 ### Chart Testing (CI/CD)
 
 ```bash
-# Run chart-testing lint
+# Run chart-testing lint (scans all charts)
 ct lint --config .github/ct.yaml --all
 
 # Run chart-testing install (requires kind cluster)
 ct install --config .github/ct.yaml --all
+
+# Test all charts with their examples
+for chart in charts/*/; do
+  if [ -f "$chart/Chart.yaml" ]; then
+    chart_name=$(basename "$chart")
+    echo "Testing $chart_name..."
+
+    # Lint
+    helm lint "$chart"
+
+    # Template with default values
+    helm template test "$chart"
+
+    # Template with examples if they exist
+    if [ -d "$chart/examples" ]; then
+      for example in "$chart/examples"/*.yaml; do
+        [ -f "$example" ] && helm template test "$chart" -f "$example"
+      done
+    fi
+  fi
+done
 ```
 
 ### Release Process
 
-1. Update version in `charts/obsidian/Chart.yaml` (follows SemVer)
-2. Update `appVersion` if upgrading Obsidian version
+**For all charts:**
+1. Update chart version in `charts/<name>/Chart.yaml` (follows SemVer)
+2. Update `appVersion` if upgrading application version
 3. Commit changes following Conventional Commits:
-   - `feat:` for new features
-   - `fix:` for bug fixes
-   - `docs:` for documentation
+   - `feat(<chart>):` for new features
+   - `fix(<chart>):` for bug fixes
+   - `docs(<chart>):` for documentation
    - `refactor:`, `test:`, `chore:` as appropriate
-4. Create and push tag: `git tag v0.x.x && git push origin v0.x.x`
+4. Create and push tag: `git tag <chart>-v0.x.x && git push origin <chart>-v0.x.x`
 5. GitHub Actions automatically packages and publishes the chart
 
-### Auto-Update Workflow
+**Tag naming conventions:**
+- Single chart update: `v0.x.x` or `<chart-name>-v0.x.x`
+- Multiple charts: Use multiple tags or `<chart-name>-v0.x.x` format (recommended)
 
-The repository includes automated tracking of LinuxServer.io Obsidian Docker releases:
+### Auto-Update Workflows
 
+The repository includes automated tracking of upstream application releases:
+
+**Obsidian Auto-Update:**
 ```bash
 # Setup auto-update (requires gh CLI)
 ./scripts/setup-auto-update.sh
 
 # Manually trigger update check
-gh workflow run auto-update.yaml
+gh workflow run auto-update-obsidian.yaml
 
 # Check workflow status
-gh run list --workflow=auto-update.yaml
+gh run list --workflow=auto-update-obsidian.yaml
 ```
 
 **Workflow behavior:**
 - Runs daily at 00:00 UTC (configurable via cron)
 - Checks for new LinuxServer.io Docker image releases
-- Compares with current `appVersion` in Chart.yaml
+- Compares with current `appVersion` in charts/obsidian/Chart.yaml
 - If update found:
-  - Sends email notification with changelog (if configured)
+  - Sends notification (GitHub Issue or email)
   - Auto-increments chart patch version
   - Either creates PR for review OR auto-commits and tags (based on `AUTO_MERGE` setting)
 
-**Configuration:** See `docs/auto-update.md` for detailed setup instructions.
+**Configuration:** See `charts/obsidian/docs/auto-update.md` for detailed setup instructions.
+
+**Adding auto-update for new charts:**
+1. Copy `.github/workflows/auto-update-obsidian.yaml`
+2. Rename to `auto-update-<chart-name>.yaml`
+3. Update chart paths and upstream source
+4. Configure workflow variables in GitHub repository settings
 
 ## Architecture
 
-### Chart Structure
+### Multi-Chart Repository Design
 
-- **Chart Location**: `charts/obsidian/`
-- **Templates**: Standard Kubernetes resources (Deployment, Service, Ingress, PVC, ServiceAccount)
-- **Helper Functions**: Defined in `_helpers.tpl` for consistent naming and labels
+**Key Principles:**
+1. **Independence**: Each chart is self-contained with own docs and examples
+2. **Consistency**: Shared CI/CD pipelines detect and test all charts automatically
+3. **Flexibility**: Charts can have chart-specific workflows (like auto-update)
+4. **Scalability**: Easy to add new charts without modifying existing infrastructure
 
-### Key Architectural Decisions
+**When to add a new chart:**
+- Create `charts/<name>/` directory
+- Follow the structure documented in `docs/repository-structure.md`
+- CI/CD automatically detects and processes it
+- No workflow changes needed!
+
+### Obsidian Chart Architecture
+
+The Obsidian chart has specific architectural decisions documented in detail:
+
+#### Key Architectural Patterns
 
 1. **Stateful Application Pattern**:
    - Uses `Recreate` deployment strategy (not RollingUpdate)
@@ -111,26 +215,18 @@ gh run list --workflow=auto-update.yaml
    - Mounted at `/dev/shm` with configurable size (default: 1Gi)
    - Prevents application crashes and rendering issues
 
-5. **Environment Variable Organization**:
-   - Core variables: PUID, PGID, TZ, TITLE
-   - Auth variables: CUSTOM_USER, PASSWORD
-   - Selkies variables: Prefixed with `SELKIES_*`
-   - Extra variables: `extraEnv` for flexibility
-
 ### Template Helpers (_helpers.tpl)
 
-Key helper functions that maintain consistency:
-- `obsidian.name`: Chart name with override support
-- `obsidian.fullname`: Fully qualified app name (63 char limit)
-- `obsidian.labels`: Standard Kubernetes labels
-- `obsidian.selectorLabels`: Pod selector labels
-- `obsidian.serviceAccountName`: Service account name resolution
-- `obsidian.pvcName`: PVC name with existingClaim support
-- `obsidian.image`: Image reference construction
+Each chart should define helper functions for consistency. Example (Obsidian):
+- `<chart>.name`: Chart name with override support
+- `<chart>.fullname`: Fully qualified app name (63 char limit)
+- `<chart>.labels`: Standard Kubernetes labels
+- `<chart>.selectorLabels`: Pod selector labels
+- `<chart>.serviceAccountName`: Service account name resolution
 
 ### Values File Organization
 
-The `values.yaml` follows this structure:
+Standard structure (see individual charts for specifics):
 1. Basic deployment settings (replicas, image)
 2. Service account configuration
 3. Security contexts (pod and container level)
@@ -138,41 +234,169 @@ The `values.yaml` follows this structure:
 5. Resource limits and requests
 6. Persistence configuration
 7. Probe configurations (liveness, readiness, startup)
-8. Environment variables (env, auth, selkies, extraEnv)
+8. Environment variables
 
 ## Important Considerations
 
-### Security Context
-Never add `runAsUser` or `runAsGroup` to the container security context. LinuxServer.io containers require root startup and handle user switching internally via PUID/PGID.
+### Adding New Charts
+
+1. **Create chart structure**:
+   ```bash
+   helm create charts/<name>
+   mkdir -p charts/<name>/examples
+   mkdir -p charts/<name>/docs
+   ```
+
+2. **Required files**:
+   - `Chart.yaml`: Metadata
+   - `values.yaml`: Default configuration
+   - `README.md`: Chart documentation
+   - `templates/`: Kubernetes manifests
+   - `examples/values-production.yaml`: At least one example
+
+3. **Documentation**:
+   - README.md in chart root
+   - Optional detailed docs in `docs/` subdirectory
+   - Examples in `examples/` subdirectory
+
+4. **Testing**:
+   - CI/CD automatically detects and tests new charts
+   - Ensure `helm lint` passes
+   - All examples must template successfully
+
+### Security Contexts
+
+- Each chart may have different security requirements
+- Obsidian: Never add `runAsUser` or `runAsGroup` to container security context
+- Document security requirements in chart-specific README
 
 ### Persistence
-- Default storage class is used when `storageClass` is empty string
+
+- Use consistent parameter naming across charts:
+  - `persistence.enabled`
+  - `persistence.size`
+  - `persistence.storageClass`
+  - `persistence.existingClaim`
+- Default storage class when `storageClass` is empty string
 - Use `storageClass: "-"` to disable dynamic provisioning
-- `existingClaim` allows reusing existing PVCs for data migration
 
 ### Health Probes
-- All probes use HTTPS endpoint (port 3001) with `scheme: HTTPS`
-- Startup probe allows 200 seconds for initial container startup
-- Important for slow first boot when downloading/initializing Obsidian
+
+- Configure appropriate probes for each application
+- Consider startup time for `startupProbe`
+- Document probe requirements in chart README
 
 ### Example Files
-The `examples/` directory contains complete value files for common scenarios:
-- `values-basic.yaml`: Minimal setup
-- `values-production.yaml`: Production-ready with auth and resources
-- `values-with-ingress.yaml`: External access with TLS
-- `values-gpu.yaml`: Hardware acceleration via VAAPI/NVIDIA
-- `values-1080p.yaml`: Fixed 1920x1080 resolution
+
+- Keep examples in `charts/<name>/examples/` directory
+- Provide examples for common scenarios:
+  - `values-basic.yaml`: Minimal setup
+  - `values-production.yaml`: Production-ready
+  - `values-with-ingress.yaml`: External access
+  - Application-specific examples as needed
 
 ### CI/CD
+
 GitHub Actions workflows (`.github/workflows/`):
-- `lint-test.yaml`: Runs on PR/push, performs linting and chart-testing
-- `release.yaml`: Automatically packages and publishes chart on tag push
-- Chart testing uses kind cluster for integration tests
-- Configuration in `.github/ct.yaml` (maintainer validation disabled)
+- `lint-test.yaml`: Runs on PR/push, performs linting and chart-testing for **all charts**
+- `release.yaml`: Automatically packages and publishes charts on tag push
+- `auto-update-<chart>.yaml`: Chart-specific automated version tracking
+- Configuration in `.github/ct.yaml` (validates all charts)
+
+**Important:**
+- Generic workflows automatically detect all charts
+- No need to modify workflows when adding new charts
+- Chart-specific workflows (like auto-update) are optional
 
 ## Chart Version Requirements
+
+### General (varies by chart)
+
+- Kubernetes: 1.19+ (minimum, check individual charts)
+- Helm: 3.2.0+
+- PV provisioner (if persistence is used)
+
+### Obsidian Specific
 
 - Kubernetes: 1.19+
 - Helm: 3.2.0+
 - Minimum resources: 500m CPU, 512Mi RAM
 - PV provisioner required for persistence
+
+## Adding Documentation
+
+### Chart-Specific Documentation
+
+Place in `charts/<chart-name>/docs/`:
+- `configuration.md`: Complete parameter reference
+- `installation.md`: Step-by-step guide
+- `troubleshooting.md`: Common issues
+- `upgrade.md`: Version migration guide
+- `auto-update.md`: Auto-update setup (if applicable)
+
+### Shared Documentation
+
+Place in `docs/` root:
+- `contributing.md`: How to contribute new charts
+- `ci-cd.md`: CI/CD pipeline documentation
+- `repository-structure.md`: Repository layout guide
+
+## Best Practices
+
+### Chart Development
+
+1. **Follow Helm best practices**: https://helm.sh/docs/chart_best_practices/
+2. **Use meaningful names**: Clear, descriptive parameter names
+3. **Provide defaults**: Sensible defaults that work out-of-box
+4. **Document everything**: Comments in values.yaml and comprehensive README
+5. **Test thoroughly**: Lint, template, and install testing
+6. **Version properly**: Follow SemVer, bump on any change
+
+### Multi-Chart Considerations
+
+1. **Independence**: Don't create dependencies between charts
+2. **Consistency**: Use similar structures and naming conventions
+3. **Documentation**: Each chart should be self-documenting
+4. **Testing**: Ensure chart works standalone
+5. **Versioning**: Each chart has independent version
+
+### Git Workflow
+
+1. **Branches**: Create feature branches for changes
+2. **Commits**: Use Conventional Commits format
+3. **PRs**: One chart per PR when possible
+4. **Tags**: Use `<chart>-v<version>` format for clarity
+5. **Reviews**: Test changes locally before submitting
+
+## Migration Notes
+
+This repository was restructured from a single-chart to multi-chart layout:
+
+**Changes:**
+- `examples/` → `charts/obsidian/examples/`
+- Chart-specific `docs/` → `charts/obsidian/docs/`
+- Generic workflows now detect all charts automatically
+- Auto-update workflow renamed to `auto-update-obsidian.yaml`
+
+**Backwards Compatibility:**
+- Chart name remains `obsidian`
+- Chart version continues from 0.1.3
+- No breaking changes for users
+- Helm repo URL unchanged (GitHub Pages redirect)
+
+## Resources
+
+### Helm Documentation
+- [Helm Charts Guide](https://helm.sh/docs/topics/charts/)
+- [Helm Best Practices](https://helm.sh/docs/chart_best_practices/)
+- [Chart Template Guide](https://helm.sh/docs/chart_template_guide/)
+
+### Tools
+- [chart-testing](https://github.com/helm/chart-testing)
+- [chart-releaser](https://github.com/helm/chart-releaser)
+- [kind](https://kind.sigs.k8s.io/) - Kubernetes in Docker
+
+### Repository Documentation
+- [Contributing Guide](docs/contributing.md)
+- [CI/CD Documentation](docs/ci-cd.md)
+- [Repository Structure](docs/repository-structure.md)
