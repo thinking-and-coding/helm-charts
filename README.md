@@ -1,180 +1,303 @@
-# Obsidian Helm Chart
+# Helm Charts Repository
 
-Helm chart for deploying [LinuxServer.io Obsidian](https://github.com/linuxserver/docker-obsidian) on Kubernetes with web-based GUI using Selkies.
+A collection of production-ready Helm charts for deploying applications on Kubernetes.
 
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/obsidian)](https://artifacthub.io/packages/search?repo=obsidian)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-## Features
+## Available Charts
 
-- 🚀 Easy deployment with sensible defaults
-- 🔒 Optional authentication and security settings
-- 💾 Persistent storage with PVC support
-- 🌐 Ingress support with TLS
-- 🎛️ Comprehensive configuration options
-- 📊 Resource limits and health checks
-- 🖥️ GPU acceleration support (VAAPI, NVIDIA)
-- 🔄 Automated deployment strategy for stateful applications
+| Chart | Description | Version | App Version |
+|-------|-------------|---------|-------------|
+| [obsidian](charts/obsidian/) | Obsidian note-taking app with web GUI | ![Version](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/thinking-and-coding/obsidian-helm-chart/main/charts/obsidian/Chart.yaml&label=version&query=$.version&color=blue) | ![AppVersion](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/thinking-and-coding/obsidian-helm-chart/main/charts/obsidian/Chart.yaml&label=app&query=$.appVersion&color=green) |
+| [docetl](charts/docetl/) | Document processing pipeline with LLM operations | ![Version](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/thinking-and-coding/obsidian-helm-chart/main/charts/docetl/Chart.yaml&label=version&query=$.version&color=blue) | ![AppVersion](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/thinking-and-coding/obsidian-helm-chart/main/charts/docetl/Chart.yaml&label=app&query=$.appVersion&color=green) |
 
 ## Quick Start
 
-### Using Helm Repository (Recommended)
+### Add the Helm Repository
 
 ```bash
-# Add the Helm repository
-helm repo add obsidian https://thinking-and-coding.github.io/obsidian-helm-chart
+helm repo add thinking-and-coding https://thinking-and-coding.github.io/obsidian-helm-chart
 helm repo update
-
-# Install the chart
-helm install my-obsidian obsidian/obsidian
-
-# Access the application
-kubectl port-forward svc/my-obsidian-obsidian 3001:3001
-# Visit https://localhost:3001
 ```
 
-### Using Git Repository
+### Install a Chart
+
+```bash
+# Install Obsidian chart
+helm install my-obsidian thinking-and-coding/obsidian
+
+# Install with custom values
+helm install my-obsidian thinking-and-coding/obsidian -f my-values.yaml
+```
+
+### Browse Charts
+
+Each chart has its own documentation:
+
+- **[Obsidian](charts/obsidian/)**: Web-based Obsidian note-taking application
+  ```bash
+  helm install my-obsidian thinking-and-coding/obsidian
+  ```
+
+- **[DocETL](charts/docetl/)**: Document processing pipeline with LLM operations
+  ```bash
+  helm install my-docetl thinking-and-coding/docetl
+  ```
+
+## Repository Structure
+
+```
+helm-charts/
+├── charts/
+│   ├── obsidian/           # Obsidian note-taking app chart
+│   │   ├── Chart.yaml      # Chart metadata
+│   │   ├── values.yaml     # Default configuration
+│   │   ├── README.md       # Chart documentation
+│   │   ├── templates/      # Kubernetes manifests
+│   │   ├── examples/       # Example configurations
+│   │   └── docs/           # Detailed documentation
+│   └── [future-charts]/    # Additional charts
+├── docs/                   # Shared documentation
+└── .github/workflows/      # CI/CD pipelines
+```
+
+For detailed repository structure, see [Repository Structure Guide](docs/repository-structure.md).
+
+## Features
+
+- 🚀 **Production-Ready**: Battle-tested charts with best practices
+- 📦 **Easy Installation**: One-command deployment via Helm
+- 🔧 **Highly Configurable**: Extensive customization options
+- 📖 **Well Documented**: Comprehensive guides and examples
+- 🔄 **Automated Updates**: CI/CD pipelines for testing and releasing
+- ✅ **Tested**: Automated linting and integration testing
+- 🛡️ **Secure**: Security best practices and hardening options
+
+## Documentation
+
+### For Users
+
+- **Installation Guides**: Each chart has its own installation guide
+- **Configuration**: See individual chart documentation
+- **Examples**: Check `charts/*/examples/` directories
+- **Troubleshooting**: Each chart includes a troubleshooting guide
+
+### For Contributors
+
+- [Contributing Guide](docs/contributing.md) - How to contribute new charts
+- [CI/CD Documentation](docs/ci-cd.md) - Understanding the pipelines
+- [Repository Structure](docs/repository-structure.md) - Layout and organization
+
+## Prerequisites
+
+- **Kubernetes**: 1.19+ (varies by chart)
+- **Helm**: 3.2.0+
+- **kubectl**: Configured to access your cluster
+
+## Using the Charts
+
+### From Helm Repository (Recommended)
+
+```bash
+# Add repository
+helm repo add thinking-and-coding https://thinking-and-coding.github.io/obsidian-helm-chart
+
+# Search for charts
+helm search repo thinking-and-coding
+
+# Install a chart
+helm install my-release thinking-and-coding/<chart-name>
+
+# Upgrade a release
+helm upgrade my-release thinking-and-coding/<chart-name>
+
+# Uninstall a release
+helm uninstall my-release
+```
+
+### From Source
 
 ```bash
 # Clone the repository
 git clone https://github.com/thinking-and-coding/obsidian-helm-chart.git
 cd obsidian-helm-chart
 
-# Install the chart
-helm install my-obsidian ./charts/obsidian
+# Install a chart from local directory
+helm install my-release ./charts/<chart-name>
 
-# Or with custom values
-helm install my-obsidian ./charts/obsidian -f examples/values-production.yaml
+# With custom values
+helm install my-release ./charts/<chart-name> -f my-values.yaml
 ```
 
-## Prerequisites
+## Chart Highlights
 
-- Kubernetes 1.19+
-- Helm 3.2.0+
-- PV provisioner support in the underlying infrastructure (for persistence)
-- Sufficient cluster resources (500m CPU, 512Mi RAM minimum)
+### Obsidian
 
-## Configuration
+Deploy Obsidian note-taking application with web-based access.
 
-See [Configuration Guide](docs/configuration.md) for detailed configuration options.
+**Key Features:**
+- Web-based GUI via Selkies desktop streaming
+- Persistent storage for notes
+- Optional authentication
+- Ingress support
+- GPU acceleration
+- Automated updates
 
-### Common Configurations
-
-#### Enable Authentication
-
+**Quick Install:**
 ```bash
-helm install my-obsidian obsidian/obsidian \
+helm install obsidian thinking-and-coding/obsidian \
   --set auth.enabled=true \
   --set auth.username=admin \
-  --set auth.password=your-secure-password
+  --set auth.password=secure-password
 ```
 
-#### With Ingress and TLS
+📖 [Full Documentation](charts/obsidian/) | 💡 [Examples](charts/obsidian/examples/)
 
+### DocETL
+
+Deploy document processing pipeline with LLM operations.
+
+**Key Features:**
+- Multi-service architecture (backend + frontend)
+- Secure API key management (4 best-practice options)
+- Persistent document storage
+- Production-ready with TLS
+- Horizontal scaling support
+- RBAC and network policies
+
+**Quick Install:**
 ```bash
-helm install my-obsidian obsidian/obsidian \
-  --set ingress.enabled=true \
-  --set ingress.hosts[0].host=obsidian.example.com \
-  --set ingress.className=nginx \
-  --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt-prod
+helm install docetl thinking-and-coding/docetl \
+  --set backend.openaiApiKey=your-api-key \
+  --set persistence.enabled=true
 ```
 
-#### Custom Resources
-
-```bash
-helm install my-obsidian obsidian/obsidian \
-  --set resources.limits.cpu=4000m \
-  --set resources.limits.memory=4Gi \
-  --set persistence.size=50Gi \
-  --set persistence.storageClass=fast-ssd
-```
-
-#### GPU Acceleration
-
-```bash
-helm install my-obsidian obsidian/obsidian \
-  --set extraEnv[0].name=DRINODE \
-  --set extraEnv[0].value=/dev/dri/renderD128
-```
-
-## Examples
-
-Check the [examples/](examples/) directory for complete configuration examples:
-
-- [Basic Setup](examples/values-basic.yaml) - Minimal configuration with defaults
-- [Production Setup](examples/values-production.yaml) - Production-ready with auth and resources
-- [Ingress with TLS](examples/values-with-ingress.yaml) - External access with SSL
-- [GPU Acceleration](examples/values-gpu.yaml) - Hardware acceleration for better performance
-
-## Documentation
-
-- [Installation Guide](docs/installation.md) - Step-by-step installation instructions
-- [Configuration Reference](docs/configuration.md) - Complete parameter reference
-- [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
-- [Upgrade Guide](docs/upgrade.md) - Version upgrade instructions
-- [Auto-Update Setup](docs/auto-update.md) - Automated version tracking and releases
-
-## Key Configuration Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `replicaCount` | Number of replicas (should be 1 for stateful apps) | `1` |
-| `image.repository` | Container image repository | `lscr.io/linuxserver/obsidian` |
-| `image.tag` | Container image tag | `latest` |
-| `persistence.enabled` | Enable persistent storage | `true` |
-| `persistence.size` | Storage size | `10Gi` |
-| `auth.enabled` | Enable HTTP basic authentication | `false` |
-| `ingress.enabled` | Enable Ingress resource | `false` |
-| `resources.requests.cpu` | CPU resource requests | `500m` |
-| `resources.requests.memory` | Memory resource requests | `512Mi` |
-
-For a complete list of parameters, see [values.yaml](charts/obsidian/values.yaml) or the [Configuration Reference](docs/configuration.md).
-
-## Uninstalling
-
-```bash
-# Uninstall the release
-helm uninstall my-obsidian
-
-# Optionally, delete the PVC (this will delete all your data!)
-kubectl delete pvc my-obsidian-obsidian-config
-```
+📖 [Full Documentation](charts/docetl/) | 💡 [Examples](charts/docetl/examples/)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! Whether you want to:
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- 🐛 Report bugs
+- 💡 Suggest new features
+- 📝 Improve documentation
+- 🎁 Add new charts
+- 🔧 Fix issues
+
+Please read our [Contributing Guide](docs/contributing.md) to get started.
+
+### Adding a New Chart
+
+1. Create chart in `charts/your-chart/`
+2. Follow the [chart structure](docs/repository-structure.md)
+3. Add documentation and examples
+4. Test thoroughly
+5. Submit a pull request
+
+The CI/CD pipelines will automatically detect and test your chart!
+
+## Development
+
+### Testing Charts Locally
+
+```bash
+# Lint a chart
+helm lint charts/<chart-name>/
+
+# Template a chart (dry-run)
+helm template test-release charts/<chart-name>/
+
+# Test with example values
+helm template test-release charts/<chart-name>/ \
+  -f charts/<chart-name>/examples/values-production.yaml
+
+# Install in a test cluster
+helm install test-release charts/<chart-name>/ --dry-run --debug
+```
+
+### Chart Testing
+
+We use [chart-testing](https://github.com/helm/chart-testing) for validation:
+
+```bash
+# Install ct
+brew install chart-testing
+
+# Lint all charts
+ct lint --config .github/ct.yaml --all
+
+# Test installation (requires kind)
+kind create cluster
+ct install --config .github/ct.yaml --all
+```
+
+## CI/CD
+
+All charts are automatically:
+
+- ✅ **Linted**: Syntax and best practices validation
+- 🧪 **Tested**: Integration testing in Kubernetes
+- 📦 **Packaged**: Automated chart packaging
+- 🚀 **Released**: Published to GitHub Pages
+
+See [CI/CD Documentation](docs/ci-cd.md) for details.
+
+## Versioning
+
+- Charts follow [Semantic Versioning](https://semver.org/)
+- Each chart has independent versioning
+- `version`: Chart version (e.g., 0.1.0)
+- `appVersion`: Application version (e.g., v1.10.6)
+
+## Repository Maintenance
+
+This repository is actively maintained. Updates include:
+
+- 🔄 Application version updates
+- 🐛 Bug fixes and improvements
+- 📝 Documentation enhancements
+- ✨ New features
+- 🔒 Security patches
+
+Some charts support automated version tracking via GitHub Actions workflows.
 
 ## Support
 
-If you encounter any issues or have questions:
+### Getting Help
 
-- Check the [Troubleshooting Guide](docs/troubleshooting.md)
-- Open an issue on [GitHub](https://github.com/thinking-and-coding/obsidian-helm-chart/issues)
-- Refer to the [LinuxServer.io Obsidian documentation](https://docs.linuxserver.io/images/docker-obsidian)
+- 📖 **Documentation**: Check chart-specific docs
+- 🐛 **Issues**: [GitHub Issues](https://github.com/thinking-and-coding/obsidian-helm-chart/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/thinking-and-coding/obsidian-helm-chart/discussions)
+
+### Reporting Issues
+
+When reporting issues, please include:
+
+1. Chart name and version
+2. Kubernetes version
+3. Helm version
+4. Error messages and logs
+5. Steps to reproduce
 
 ## License
 
 Apache License 2.0 - see [LICENSE](LICENSE) for details.
 
+All charts are provided as-is. Individual applications may have their own licenses.
+
 ## Acknowledgments
 
-- Based on [LinuxServer.io Obsidian Docker container](https://github.com/linuxserver/docker-obsidian)
-- Uses [Selkies](https://github.com/selkies-project/selkies-gstreamer) for web desktop streaming
-- Built on [Kubernetes](https://kubernetes.io/) and [Helm](https://helm.sh/)
+- Built with ❤️ using [Helm](https://helm.sh/)
+- Deployed on [Kubernetes](https://kubernetes.io/)
+- Charts published via [GitHub Pages](https://pages.github.com/)
+- CI/CD powered by [GitHub Actions](https://github.com/features/actions)
+- Chart testing via [chart-testing](https://github.com/helm/chart-testing)
+- Releases managed by [chart-releaser](https://github.com/helm/chart-releaser)
 
-## Security
+## Project Status
 
-> [!WARNING]
-> This container provides privileged access to a desktop environment. Do not expose it to the Internet without proper authentication and security measures.
+🟢 **Active**: This repository is actively maintained and accepting contributions.
 
-- HTTPS is **required** for full functionality (WebCodecs support)
-- The default self-signed certificate is only suitable for local development
-- For production, use a reverse proxy with valid TLS certificates
-- Enable authentication (`auth.enabled=true`) or use external authentication via Ingress
-- The web interface includes a terminal with sudo access
+---
+
+**Need a custom chart?** Check our [Contributing Guide](docs/contributing.md) or open a [feature request](https://github.com/thinking-and-coding/obsidian-helm-chart/issues/new)!

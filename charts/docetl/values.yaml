@@ -1,0 +1,207 @@
+# Default values for docetl.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Docker image configuration
+image:
+  # IMPORTANT: Update 'repository' to your full registry path before deployment
+  # Examples:
+  #   - Docker Hub: docker.io/your-org/docetl
+  #   - GitHub Container Registry: ghcr.io/your-org/docetl
+  #   - AWS ECR: 123456789012.dkr.ecr.us-west-2.amazonaws.com/docetl
+  #   - Google GCR: gcr.io/your-project/docetl
+  repository: docetl
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Backend service configuration
+backend:
+  replicaCount: 1
+
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  # Health check configuration
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+
+  # Environment variables (non-sensitive)
+  env:
+    BACKEND_HOST: "0.0.0.0"
+    BACKEND_PORT: "8000"
+    BACKEND_RELOAD: "False"
+    TEXT_FILE_ENCODINGS: "utf-8,latin1,cp1252,iso-8859-1"
+
+# Frontend service configuration
+frontend:
+  replicaCount: 1
+
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 500m      # Tightened from 1000m for better resource predictability
+      memory: 1Gi    # Tightened from 2Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+  # Health check configuration
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+
+  # Environment variables (non-sensitive)
+  # Note: NEXT_PUBLIC_BACKEND_HOST and NEXT_PUBLIC_BACKEND_PORT are dynamically
+  # generated in the ConfigMap to use the backend service DNS name
+  env:
+    FRONTEND_HOST: "0.0.0.0"
+    FRONTEND_PORT: "3000"
+    NEXT_PUBLIC_HOSTED_DOCWRANGLER: "false"
+
+# Secrets configuration (sensitive data)
+# IMPORTANT: DO NOT commit actual API keys to version control!
+#
+# For deployment, you MUST provide the OpenAI API key via:
+# 1. Command line: --set secrets.openaiApiKey=your-actual-key
+# 2. External secret management: Sealed Secrets, HashiCorp Vault, AWS Secrets Manager, etc.
+# 3. Separate values file (not committed to git): -f my-secrets.yaml
+#
+# The chart will fail validation if the key is empty or contains the placeholder.
+secrets:
+  # OpenAI API Key (REQUIRED)
+  # Leave empty here and provide via --set during deployment
+  openaiApiKey: ""
+  # Add other API keys as needed
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+  hosts:
+    - host: docetl.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: backend
+        - path: /health
+          pathType: Prefix
+          backend: backend
+        - path: /fs
+          pathType: Prefix
+          backend: backend
+        - path: /
+          pathType: Prefix
+          backend: frontend
+  tls:
+    enabled: false
+    # - secretName: docetl-tls
+    #   hosts:
+    #     - docetl.example.com
+
+# Persistent Volume Claim configuration
+persistence:
+  enabled: true
+  # storageClassName: ""  # Use default StorageClass if not specified
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  # If you need multiple replicas to access the same volume, use ReadWriteMany
+  # Note: ReadWriteMany requires storage that supports it (like NFS, CephFS, etc.)
+  annotations: {}
+
+# Service Account
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# RBAC configuration
+# Set to true to create Role and RoleBinding with minimal permissions
+# Currently disabled by default as DocETL doesn't require special Kubernetes permissions
+rbac:
+  create: false
+
+# Pod Security Context
+podSecurityContext:
+  fsGroup: 65534  # nogroup - allows volume access for user 65534
+
+# Security Context
+# Runs containers as unprivileged user for enhanced security
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534  # nobody user
+  runAsGroup: 65534  # nogroup
+  capabilities:
+    drop:
+    - ALL  # Drop all Linux capabilities for minimal privilege
+  # readOnlyRootFilesystem: false is required because:
+  # - Backend needs to write to /docetl-data (mounted from PVC)
+  # - Frontend may need temporary filesystem access for Next.js operation
+  # - Both services write logs and temporary files during normal operation
+  readOnlyRootFilesystem: false
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

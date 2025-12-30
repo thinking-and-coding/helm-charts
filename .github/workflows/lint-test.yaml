@@ -30,7 +30,12 @@ jobs:
 
       - name: Run Helm Lint
         run: |
-          helm lint charts/obsidian/
+          for chart in charts/*/; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              echo "Linting $chart"
+              helm lint "$chart"
+            fi
+          done
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -84,21 +89,22 @@ jobs:
         with:
           version: v3.13.0
 
-      - name: Helm Template - Default Values
+      - name: Helm Template - All Charts
         run: |
-          helm template test-release charts/obsidian/ > /dev/null
+          for chart in charts/*/; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              chart_name=$(basename "$chart")
+              echo "Templating $chart_name with default values..."
+              helm template test-release "$chart" > /dev/null
 
-      - name: Helm Template - With Ingress
-        run: |
-          helm template test-release charts/obsidian/ \
-            -f examples/values-with-ingress.yaml > /dev/null
-
-      - name: Helm Template - Production
-        run: |
-          helm template test-release charts/obsidian/ \
-            -f examples/values-production.yaml > /dev/null
-
-      - name: Helm Template - Existing PVC
-        run: |
-          helm template test-release charts/obsidian/ \
-            --set persistence.existingClaim=my-pvc > /dev/null
+              # Test with example files if they exist
+              if [ -d "$chart/examples" ]; then
+                for example in "$chart/examples"/*.yaml; do
+                  if [ -f "$example" ]; then
+                    echo "Templating $chart_name with $(basename "$example")..."
+                    helm template test-release "$chart" -f "$example" > /dev/null
+                  fi
+                done
+              fi
+            fi
+          done

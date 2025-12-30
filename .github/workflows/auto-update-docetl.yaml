@@ -1,4 +1,7 @@
-name: Auto Update Chart
+name: Auto Update DocETL Chart
+
+# This workflow is specific to the DocETL chart.
+# Tracks ucbepic/docetl GitHub releases for new versions.
 
 on:
   schedule:
@@ -24,17 +27,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check for new Docker image version
+      - name: Check for new DocETL release
         id: check
         run: |
           # Get current appVersion from Chart.yaml
-          CURRENT_VERSION=$(grep '^appVersion:' charts/obsidian/Chart.yaml | awk '{print $2}' | tr -d '"')
+          CURRENT_VERSION=$(grep '^appVersion:' charts/docetl/Chart.yaml | awk '{print $2}' | tr -d '"')
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT_VERSION"
 
-          # Get latest release from linuxserver/docker-obsidian
-          LATEST_RELEASE=$(curl -s https://api.github.com/repos/linuxserver/docker-obsidian/releases/latest)
-          LATEST_VERSION=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
+          # Get latest release from ucbepic/docetl
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/ucbepic/docetl/releases/latest)
+          LATEST_VERSION=$(echo "$LATEST_RELEASE" | jq -r '.tag_name' | sed 's/^v//')
           RELEASE_DATE=$(echo "$LATEST_RELEASE" | jq -r '.published_at')
           RELEASE_BODY=$(echo "$LATEST_RELEASE" | jq -r '.body')
           RELEASE_URL=$(echo "$LATEST_RELEASE" | jq -r '.html_url')
@@ -67,7 +70,7 @@ jobs:
 
           # Create a summary of changes
           cat > /tmp/changelog_summary.md << 'EOF'
-          ## New Docker Image Release Available
+          ## New DocETL Release Available
 
           **Version**: ${{ steps.check.outputs.latest_version }}
           **Release Date**: ${{ steps.check.outputs.release_date }}
@@ -132,7 +135,7 @@ jobs:
             const issue = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '🔔 New Docker Image Release: ${{ needs.check-updates.outputs.latest_version }}',
+              title: '🚀 New DocETL Release: v${{ needs.check-updates.outputs.latest_version }}',
               body: `${changelog}\n\n---\n\n**Current Version:** ${{ needs.check-updates.outputs.current_version }}\n**New Version:** ${{ needs.check-updates.outputs.latest_version }}\n\n**Action:** A Pull Request will be created automatically to update the chart.\n\n🤖 This issue was created automatically by the auto-update workflow.\n\ncc: @${{ github.repository_owner }}`,
               labels: ['auto-update', 'notification'],
               assignees: process.env.ASSIGNEES ? process.env.ASSIGNEES.split(',') : []
@@ -150,11 +153,11 @@ jobs:
           server_port: ${{ secrets.MAIL_PORT || '587' }}
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "[Obsidian Helm Chart] New Docker Image Release: ${{ needs.check-updates.outputs.latest_version }}"
+          subject: "[DocETL Helm Chart] New Release: v${{ needs.check-updates.outputs.latest_version }}"
           to: ${{ vars.NOTIFICATION_EMAIL }}
           from: ${{ secrets.MAIL_FROM || secrets.MAIL_USERNAME }}
           body: |
-            A new version of the LinuxServer.io Obsidian Docker image is available!
+            A new version of DocETL is available!
 
             Current Version: ${{ needs.check-updates.outputs.current_version }}
             Latest Version: ${{ needs.check-updates.outputs.latest_version }}
@@ -163,7 +166,7 @@ jobs:
 
             ---
 
-            This is an automated notification from the Obsidian Helm Chart repository.
+            This is an automated notification from the DocETL Helm Chart repository.
             Repository: https://github.com/${{ github.repository }}
 
             A Pull Request or GitHub Issue has been created for this update.
@@ -193,7 +196,7 @@ jobs:
         id: update_chart
         run: |
           LATEST_VERSION="${{ needs.check-updates.outputs.latest_version }}"
-          CURRENT_CHART_VERSION=$(grep '^version:' charts/obsidian/Chart.yaml | awk '{print $2}')
+          CURRENT_CHART_VERSION=$(grep '^version:' charts/docetl/Chart.yaml | awk '{print $2}')
 
           # Parse version components (assuming semver: MAJOR.MINOR.PATCH)
           MAJOR=$(echo $CURRENT_CHART_VERSION | cut -d. -f1)
@@ -208,17 +211,17 @@ jobs:
           echo "Updating chart version: $CURRENT_CHART_VERSION -> $NEW_CHART_VERSION"
 
           # Update appVersion
-          sed -i.bak "s/^appVersion: .*/appVersion: \"$LATEST_VERSION\"/" charts/obsidian/Chart.yaml
+          sed -i.bak "s/^appVersion: .*/appVersion: \"$LATEST_VERSION\"/" charts/docetl/Chart.yaml
 
           # Update chart version
-          sed -i.bak "s/^version: .*/version: $NEW_CHART_VERSION/" charts/obsidian/Chart.yaml
+          sed -i.bak "s/^version: .*/version: $NEW_CHART_VERSION/" charts/docetl/Chart.yaml
 
           # Clean up backup files
-          rm charts/obsidian/Chart.yaml.bak
+          rm charts/docetl/Chart.yaml.bak
 
           # Show changes
           echo "Updated Chart.yaml:"
-          cat charts/obsidian/Chart.yaml | grep -E '^(version|appVersion):'
+          cat charts/docetl/Chart.yaml | grep -E '^(version|appVersion):'
 
       - name: Create Pull Request
         if: vars.AUTO_MERGE != 'true'
@@ -227,18 +230,18 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: |
-            chore: update Obsidian to ${{ needs.check-updates.outputs.latest_version }}
+            chore: update DocETL to v${{ needs.check-updates.outputs.latest_version }}
 
-            Updates the LinuxServer.io Obsidian Docker image to version ${{ needs.check-updates.outputs.latest_version }}.
+            Updates DocETL to version ${{ needs.check-updates.outputs.latest_version }}.
 
             Release: ${{ needs.check-updates.outputs.changelog_url }}
 
             This is an automated update created by the auto-update workflow.
-          branch: auto-update/${{ needs.check-updates.outputs.latest_version }}
+          branch: auto-update/docetl-${{ needs.check-updates.outputs.latest_version }}
           delete-branch: true
-          title: "chore: update Obsidian to ${{ needs.check-updates.outputs.latest_version }}"
+          title: "chore: update DocETL to v${{ needs.check-updates.outputs.latest_version }}"
           body: |
-            ## 🔔 Automated Docker Image Update
+            ## 🚀 Automated DocETL Release Update
 
             **Current Version:** ${{ needs.check-updates.outputs.current_version }}
             **New Version:** ${{ needs.check-updates.outputs.latest_version }}
@@ -265,13 +268,13 @@ jobs:
         if: vars.AUTO_MERGE == 'true'
         run: |
           NEW_VERSION="${{ steps.update_chart.outputs.new_chart_version }}"
-          LATEST_DOCKER_VERSION="${{ needs.check-updates.outputs.latest_version }}"
+          LATEST_DOCETL_VERSION="${{ needs.check-updates.outputs.latest_version }}"
 
           # Commit changes
-          git add charts/obsidian/Chart.yaml
-          git commit -m "chore: update Obsidian to $LATEST_DOCKER_VERSION
+          git add charts/docetl/Chart.yaml
+          git commit -m "chore: update DocETL to v$LATEST_DOCETL_VERSION
 
-          Updates chart version to $NEW_VERSION and Obsidian Docker image to $LATEST_DOCKER_VERSION.
+          Updates chart version to $NEW_VERSION and DocETL to v$LATEST_DOCETL_VERSION.
 
           Release: ${{ needs.check-updates.outputs.changelog_url }}
 
@@ -285,7 +288,7 @@ jobs:
           # Create and push tag
           git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}
 
-          Obsidian Docker image: $LATEST_DOCKER_VERSION
+          DocETL version: v$LATEST_DOCETL_VERSION
 
           See release notes: ${{ needs.check-updates.outputs.changelog_url }}"
 

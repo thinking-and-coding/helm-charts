@@ -1,0 +1,36 @@
+{{- if .Values.rbac.create -}}
+---
+# Role for DocETL
+# Minimal permissions - currently no special Kubernetes permissions are required
+# This template is disabled by default (rbac.create: false)
+# Enable only if future features require Kubernetes API access
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "docetl.fullname" . }}
+  labels:
+    {{- include "docetl.labels" . | nindent 4 }}
+rules:
+  # Example: Add rules here if DocETL needs to interact with Kubernetes API
+  # - apiGroups: [""]
+  #   resources: ["pods"]
+  #   verbs: ["get", "list"]
+  []
+
+---
+# RoleBinding for DocETL
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "docetl.fullname" . }}
+  labels:
+    {{- include "docetl.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "docetl.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "docetl.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,85 @@
+# Production environment configuration
+# Higher resources and multiple replicas for production workloads
+
+backend:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+
+frontend:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+persistence:
+  enabled: true
+  size: 50Gi
+  # IMPORTANT: For production with multiple replicas, use ReadWriteMany access mode
+  # This allows multiple backend pods to access the same volume simultaneously
+  accessMode: ReadWriteMany
+  # You MUST specify a storageClassName that supports ReadWriteMany (RWX) access
+  # Examples of storage classes that support RWX:
+  #   - NFS-based storage: "nfs-client", "nfs-subdir-external-provisioner"
+  #   - CephFS: "cephfs"
+  #   - AWS EFS CSI: "efs-sc"
+  #   - Azure Files: "azurefile"
+  #   - Google Filestore: "filestore"
+  # storageClassName: "nfs-client"  # Uncomment and set to your RWX-capable storage class
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+  hosts:
+    - host: docetl.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: backend
+        - path: /health
+          pathType: Prefix
+          backend: backend
+        - path: /fs
+          pathType: Prefix
+          backend: backend
+        - path: /
+          pathType: Prefix
+          backend: frontend
+  tls:
+    enabled: true
+    # TLS certificate secret name
+    # Option 1: Use cert-manager for automatic certificate management
+    #   - Uncomment the cert-manager annotation above (line 35)
+    #   - cert-manager will automatically create this secret
+    # Option 2: Manually create the TLS secret
+    #   kubectl create secret tls docetl-tls --cert=path/to/cert.crt --key=path/to/cert.key
+    secretName: docetl-tls
+    # hosts:
+    #   - docetl.example.com
+
+# Affinity configuration to spread pods across nodes
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - docetl
+          topologyKey: kubernetes.io/hostname

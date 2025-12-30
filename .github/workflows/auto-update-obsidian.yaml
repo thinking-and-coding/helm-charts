@@ -1,0 +1,314 @@
+name: Auto Update Obsidian Chart
+
+# This workflow is specific to the Obsidian chart.
+# For other charts, create similar workflows (e.g., auto-update-<chart-name>.yaml)
+# and adjust the chart path, Docker image source, and update logic accordingly.
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    outputs:
+      has_update: ${{ steps.check.outputs.has_update }}
+      latest_version: ${{ steps.check.outputs.latest_version }}
+      current_version: ${{ steps.check.outputs.current_version }}
+      release_notes: ${{ steps.check.outputs.release_notes }}
+      changelog_url: ${{ steps.check.outputs.changelog_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for new Docker image version
+        id: check
+        run: |
+          # Get current appVersion from Chart.yaml
+          CURRENT_VERSION=$(grep '^appVersion:' charts/obsidian/Chart.yaml | awk '{print $2}' | tr -d '"')
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+          # Get latest release from linuxserver/docker-obsidian
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/linuxserver/docker-obsidian/releases/latest)
+          LATEST_VERSION=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
+          RELEASE_DATE=$(echo "$LATEST_RELEASE" | jq -r '.published_at')
+          RELEASE_BODY=$(echo "$LATEST_RELEASE" | jq -r '.body')
+          RELEASE_URL=$(echo "$LATEST_RELEASE" | jq -r '.html_url')
+
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "release_date=$RELEASE_DATE" >> $GITHUB_OUTPUT
+          echo "changelog_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+          echo "Latest version: $LATEST_VERSION"
+
+          # Save release notes to file for multi-line handling
+          echo "$RELEASE_BODY" > /tmp/release_notes.txt
+
+          # Check if update is needed (skip if current is "latest" or versions match)
+          if [ "$CURRENT_VERSION" = "latest" ]; then
+            echo "has_update=true" >> $GITHUB_OUTPUT
+            echo "Update check: Current version is 'latest', will update to track $LATEST_VERSION"
+          elif [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "has_update=true" >> $GITHUB_OUTPUT
+            echo "Update available: $CURRENT_VERSION -> $LATEST_VERSION"
+          else
+            echo "has_update=false" >> $GITHUB_OUTPUT
+            echo "No update needed"
+          fi
+
+      - name: Extract changelog summary
+        if: steps.check.outputs.has_update == 'true'
+        id: changelog
+        run: |
+          RELEASE_NOTES=$(cat /tmp/release_notes.txt)
+
+          # Create a summary of changes
+          cat > /tmp/changelog_summary.md << 'EOF'
+          ## New Docker Image Release Available
+
+          **Version**: ${{ steps.check.outputs.latest_version }}
+          **Release Date**: ${{ steps.check.outputs.release_date }}
+          **Release URL**: ${{ steps.check.outputs.changelog_url }}
+
+          ### Release Notes
+
+          EOF
+
+          echo "$RELEASE_NOTES" >> /tmp/changelog_summary.md
+
+          echo "Changelog summary created"
+
+      - name: Upload changelog artifact
+        if: steps.check.outputs.has_update == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: /tmp/changelog_summary.md
+          retention-days: 5
+
+  notify:
+    needs: check-updates
+    if: needs.check-updates.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+
+      - name: Create GitHub Issue for notification
+        if: vars.DISABLE_ISSUE_NOTIFICATION != 'true' && vars.AUTO_MERGE != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const changelog = fs.readFileSync('changelog_summary.md', 'utf8');
+
+            // Check if there's already an open issue for this version
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'auto-update',
+              per_page: 100
+            });
+
+            const existingIssue = issues.data.find(issue =>
+              issue.title.includes('${{ needs.check-updates.outputs.latest_version }}')
+            );
+
+            if (existingIssue) {
+              console.log(`Issue already exists: #${existingIssue.number}`);
+              return;
+            }
+
+            // Create new issue
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔔 New Docker Image Release: ${{ needs.check-updates.outputs.latest_version }}',
+              body: `${changelog}\n\n---\n\n**Current Version:** ${{ needs.check-updates.outputs.current_version }}\n**New Version:** ${{ needs.check-updates.outputs.latest_version }}\n\n**Action:** A Pull Request will be created automatically to update the chart.\n\n🤖 This issue was created automatically by the auto-update workflow.\n\ncc: @${{ github.repository_owner }}`,
+              labels: ['auto-update', 'notification'],
+              assignees: process.env.ASSIGNEES ? process.env.ASSIGNEES.split(',') : []
+            });
+
+            console.log(`Created issue: #${issue.data.number}`);
+        env:
+          ASSIGNEES: ${{ vars.ISSUE_ASSIGNEES || '' }}
+
+      - name: Send email notification (optional)
+        if: vars.NOTIFICATION_EMAIL != ''
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: ${{ secrets.MAIL_PORT || '587' }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "[Obsidian Helm Chart] New Docker Image Release: ${{ needs.check-updates.outputs.latest_version }}"
+          to: ${{ vars.NOTIFICATION_EMAIL }}
+          from: ${{ secrets.MAIL_FROM || secrets.MAIL_USERNAME }}
+          body: |
+            A new version of the LinuxServer.io Obsidian Docker image is available!
+
+            Current Version: ${{ needs.check-updates.outputs.current_version }}
+            Latest Version: ${{ needs.check-updates.outputs.latest_version }}
+
+            Release: ${{ needs.check-updates.outputs.changelog_url }}
+
+            ---
+
+            This is an automated notification from the Obsidian Helm Chart repository.
+            Repository: https://github.com/${{ github.repository }}
+
+            A Pull Request or GitHub Issue has been created for this update.
+
+  auto-release:
+    needs: check-updates
+    if: needs.check-updates.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+
+      - name: Update Chart.yaml
+        id: update_chart
+        run: |
+          LATEST_VERSION="${{ needs.check-updates.outputs.latest_version }}"
+          CURRENT_CHART_VERSION=$(grep '^version:' charts/obsidian/Chart.yaml | awk '{print $2}')
+
+          # Parse version components (assuming semver: MAJOR.MINOR.PATCH)
+          MAJOR=$(echo $CURRENT_CHART_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_CHART_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_CHART_VERSION | cut -d. -f3)
+
+          # Increment patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_CHART_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+
+          echo "new_chart_version=$NEW_CHART_VERSION" >> $GITHUB_OUTPUT
+          echo "Updating chart version: $CURRENT_CHART_VERSION -> $NEW_CHART_VERSION"
+
+          # Update appVersion
+          sed -i.bak "s/^appVersion: .*/appVersion: \"$LATEST_VERSION\"/" charts/obsidian/Chart.yaml
+
+          # Update chart version
+          sed -i.bak "s/^version: .*/version: $NEW_CHART_VERSION/" charts/obsidian/Chart.yaml
+
+          # Clean up backup files
+          rm charts/obsidian/Chart.yaml.bak
+
+          # Show changes
+          echo "Updated Chart.yaml:"
+          cat charts/obsidian/Chart.yaml | grep -E '^(version|appVersion):'
+
+      - name: Create Pull Request
+        if: vars.AUTO_MERGE != 'true'
+        id: create_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            chore: update Obsidian to ${{ needs.check-updates.outputs.latest_version }}
+
+            Updates the LinuxServer.io Obsidian Docker image to version ${{ needs.check-updates.outputs.latest_version }}.
+
+            Release: ${{ needs.check-updates.outputs.changelog_url }}
+
+            This is an automated update created by the auto-update workflow.
+          branch: auto-update/${{ needs.check-updates.outputs.latest_version }}
+          delete-branch: true
+          title: "chore: update Obsidian to ${{ needs.check-updates.outputs.latest_version }}"
+          body: |
+            ## 🔔 Automated Docker Image Update
+
+            **Current Version:** ${{ needs.check-updates.outputs.current_version }}
+            **New Version:** ${{ needs.check-updates.outputs.latest_version }}
+            **Release:** ${{ needs.check-updates.outputs.changelog_url }}
+
+            ---
+
+            $(cat changelog_summary.md)
+
+            ---
+
+            **Notification:** This PR will trigger GitHub email notifications to all watchers and mentioned users.
+
+            cc: @${{ github.repository_owner }} ${{ vars.PR_MENTIONS && format('| {0}', vars.PR_MENTIONS) || '' }}
+
+            🤖 This is an automated update created by the auto-update workflow.
+          labels: |
+            automated
+            dependencies
+            auto-update
+          reviewers: ${{ vars.PR_REVIEWERS }}
+
+      - name: Commit and create release tag
+        if: vars.AUTO_MERGE == 'true'
+        run: |
+          NEW_VERSION="${{ steps.update_chart.outputs.new_chart_version }}"
+          LATEST_DOCKER_VERSION="${{ needs.check-updates.outputs.latest_version }}"
+
+          # Commit changes
+          git add charts/obsidian/Chart.yaml
+          git commit -m "chore: update Obsidian to $LATEST_DOCKER_VERSION
+
+          Updates chart version to $NEW_VERSION and Obsidian Docker image to $LATEST_DOCKER_VERSION.
+
+          Release: ${{ needs.check-updates.outputs.changelog_url }}
+
+          🤖 Generated with Claude Code
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+          # Push changes to main
+          git push origin main
+
+          # Create and push tag
+          git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}
+
+          Obsidian Docker image: $LATEST_DOCKER_VERSION
+
+          See release notes: ${{ needs.check-updates.outputs.changelog_url }}"
+
+          git push origin "v${NEW_VERSION}"
+
+          echo "✅ Created and pushed tag v${NEW_VERSION}"
+
+      - name: Summary
+        run: |
+          echo "## Auto Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Current Version**: ${{ needs.check-updates.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Version**: ${{ needs.check-updates.outputs.latest_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Chart Version**: ${{ steps.update_chart.outputs.new_chart_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release Notes**: ${{ needs.check-updates.outputs.changelog_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ vars.AUTO_MERGE }}" = "true" ]; then
+            echo "✅ Changes committed and tag created automatically" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "📝 Pull request created for review" >> $GITHUB_STEP_SUMMARY
+          fi

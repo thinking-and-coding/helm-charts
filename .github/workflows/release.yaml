@@ -35,42 +35,26 @@ jobs:
           charts_dir: charts
           skip_existing: true
 
-      - name: Get Chart Version
-        id: chart_version
+      - name: Create GitHub Release Summary
+        id: summary
         run: |
-          CHART_VERSION=$(helm show chart charts/obsidian | grep '^version:' | awk '{print $2}')
-          echo "version=$CHART_VERSION" >> $GITHUB_OUTPUT
+          echo "## Charts Released" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
-      - name: Create GitHub Release Notes
-        run: |
-          cat > release-notes.md << 'NOTES'
-          ## Obsidian Helm Chart ${{ steps.chart_version.outputs.version }}
+          # List all charts that were packaged
+          if [ -d .cr-release-packages ]; then
+            for package in .cr-release-packages/*.tgz; do
+              if [ -f "$package" ]; then
+                chart_file=$(basename "$package")
+                echo "- ✅ $chart_file" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
+          fi
 
-          ### Installation
-
-          ```bash
-          helm repo add obsidian https://thinking-and-coding.github.io/obsidian-helm-chart
-          helm repo update
-          helm install my-obsidian obsidian/obsidian --version ${{ steps.chart_version.outputs.version }}
-          ```
-
-          ### Quick Links
-
-          - [Documentation](https://github.com/thinking-and-coding/obsidian-helm-chart/blob/${{ github.ref_name }}/README.md)
-          - [Configuration Guide](https://github.com/thinking-and-coding/obsidian-helm-chart/blob/${{ github.ref_name }}/docs/configuration.md)
-          - [Examples](https://github.com/thinking-and-coding/obsidian-helm-chart/tree/${{ github.ref_name }}/examples)
-
-          ### Chart Information
-
-          - **Chart Version**: ${{ steps.chart_version.outputs.version }}
-          - **App Version**: $(helm show chart charts/obsidian | grep '^appVersion:' | awk '{print $2}' | tr -d '"')
-
-          For detailed changes, see the [commit history](https://github.com/thinking-and-coding/obsidian-helm-chart/commits/${{ github.ref_name }}).
-          NOTES
-
-      - name: Update Release with Notes
-        uses: softprops/action-gh-release@v1
-        with:
-          body_path: release-notes.md
-          files: |
-            .cr-release-packages/*.tgz
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "helm repo add obsidian https://thinking-and-coding.github.io/obsidian-helm-chart" >> $GITHUB_STEP_SUMMARY
+          echo "helm repo update" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

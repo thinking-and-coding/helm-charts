@@ -1,0 +1,45 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "docetl.fullname" . }}
+  labels:
+    {{- include "docetl.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if and .Values.ingress.tls .Values.ingress.tls.enabled }}
+  tls:
+    {{- range .Values.ingress.hosts }}
+    - hosts:
+        - {{ .host | quote }}
+      secretName: {{ include "docetl.fullname" $ }}-tls
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                {{- if eq .backend "backend" }}
+                name: {{ include "docetl.fullname" $ }}-backend
+                port:
+                  number: {{ $.Values.backend.service.port }}
+                {{- else if eq .backend "frontend" }}
+                name: {{ include "docetl.fullname" $ }}-frontend
+                port:
+                  number: {{ $.Values.frontend.service.port }}
+                {{- end }}
+          {{- end }}
+    {{- end }}
+{{- end }}
