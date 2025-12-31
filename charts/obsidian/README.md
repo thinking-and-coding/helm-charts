@@ -172,7 +172,7 @@ helm repo update
 helm upgrade my-obsidian obsidian/obsidian
 
 # Upgrade with custom values
-helm upgrade my-obsidian obsidian/obsidian -f charts/obsidian/examples/values-production.yaml
+helm upgrade my-obsidian obsidian/obsidian -f my-values.yaml
 ```
 
 See [Upgrade Guide](docs/upgrade.md) for version-specific upgrade instructions.

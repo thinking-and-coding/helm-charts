@@ -44,7 +44,7 @@ cd helm-charts
 helm install my-obsidian ./charts/obsidian
 
 # Or use an example configuration
-helm install my-obsidian ./charts/obsidian -f examples/values-production.yaml
+helm install my-obsidian ./charts/obsidian -f ./charts/obsidian/examples/values-production.yaml
 ```
 
 ### Method 3: Using a Custom Values File

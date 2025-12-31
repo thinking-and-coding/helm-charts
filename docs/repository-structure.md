@@ -7,7 +7,6 @@ This document explains the layout and organization of this multi-chart Helm repo
 ```
 helm-charts/
 ├── README.md                          # Repository overview
-├── CONTRIBUTING.md                    # Contributing guidelines
 ├── LICENSE                            # Apache 2.0 license
 ├── CLAUDE.md                          # Claude Code assistant instructions
 │
@@ -81,11 +80,6 @@ helm-charts/
 - List of all available charts
 - Quick start guide for each chart
 - Installation and usage overview
-
-#### `CONTRIBUTING.md`
-- Contributing guidelines
-- Code of conduct
-- Pull request process
 
 #### `LICENSE`
 - Apache License 2.0

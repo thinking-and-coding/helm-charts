@@ -5,7 +5,7 @@ This guide provides step-by-step instructions for installing the DocETL Helm cha
 ## Prerequisites
 
 - Kubernetes 1.19+
-- Helm 3.0+
+- Helm 3.2.0+
 - PersistentVolume provisioner support in the underlying infrastructure (if persistence is enabled)
 - Ingress controller (if Ingress is enabled)
 

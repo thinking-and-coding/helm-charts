@@ -56,6 +56,13 @@ helm-charts/
 │   │   ├── templates/      # Kubernetes manifests
 │   │   ├── examples/       # Example configurations
 │   │   └── docs/           # Detailed documentation
+│   ├── docetl/             # DocETL document processing chart
+│   │   ├── Chart.yaml      # Chart metadata
+│   │   ├── values.yaml     # Default configuration
+│   │   ├── README.md       # Chart documentation
+│   │   ├── templates/      # Kubernetes manifests
+│   │   ├── examples/       # Example configurations
+│   │   └── docs/           # Detailed documentation
 │   └── [future-charts]/    # Additional charts
 ├── docs/                   # Shared documentation
 └── .github/workflows/      # CI/CD pipelines

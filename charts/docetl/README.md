@@ -3,7 +3,7 @@
 A production-ready Helm chart for deploying [DocETL](https://docetl.org), a powerful document processing pipeline with LLM operations, on Kubernetes.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Helm](https://img.shields.io/badge/Helm-3.0%2B-blue)](https://helm.sh)
+[![Helm](https://img.shields.io/badge/Helm-3.2.0%2B-blue)](https://helm.sh)
 
 ## Features
 
@@ -20,7 +20,7 @@ A production-ready Helm chart for deploying [DocETL](https://docetl.org), a powe
 ### Prerequisites
 
 - Kubernetes 1.19+
-- Helm 3.0+
+- Helm 3.2.0+
 - PersistentVolume provisioner (if persistence enabled)
 - Ingress controller (if Ingress enabled)
 
