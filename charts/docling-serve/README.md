@@ -33,11 +33,11 @@ Key capabilities:
 
 ```bash
 # Add the Helm repository
-helm repo add thinking-and-coding https://thinking-and-coding.github.io/helm-charts
+helm repo add extreme_structure https://x-tructure.github.io/helm-charts
 helm repo update
 
 # Install with CPU defaults
-helm install my-docling-serve thinking-and-coding/docling-serve
+helm install my-docling-serve extreme_structure/docling-serve
 
 # Access the API
 kubectl port-forward svc/my-docling-serve 5001:5001
@@ -47,7 +47,7 @@ kubectl port-forward svc/my-docling-serve 5001:5001
 ### Using Git Repository
 
 ```bash
-git clone https://github.com/thinking-and-coding/helm-charts.git
+git clone https://github.com/extreme_structure/helm-charts.git
 cd helm-charts
 
 # Install with default CPU configuration
@@ -186,10 +186,10 @@ See [Configuration Reference](docs/configuration.md) for complete list.
 helm repo update
 
 # Upgrade to latest version
-helm upgrade my-docling-serve thinking-and-coding/docling-serve
+helm upgrade my-docling-serve extreme_structure/docling-serve
 
 # Or with custom values
-helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+helm upgrade my-docling-serve extreme_structure/docling-serve \
   -f my-values.yaml
 ```
 
@@ -213,10 +213,10 @@ Docling and Docling-Serve are licensed under MIT License.
 
 - [Docling-Serve GitHub](https://github.com/docling-project/docling-serve)
 - [Docling GitHub](https://github.com/docling-project/docling)
-- [Chart Repository](https://github.com/thinking-and-coding/helm-charts)
+- [Chart Repository](https://github.com/X-tructure/helm-charts)
 - [Helm Documentation](https://helm.sh/docs/)
 
 ## Support
 
-- Report issues: [GitHub Issues](https://github.com/thinking-and-coding/helm-charts/issues)
+- Report issues: [GitHub Issues](https://github.com/X-tructure/helm-charts/issues)
 - Upstream project: [Docling-Serve Issues](https://github.com/docling-project/docling-serve/issues)
