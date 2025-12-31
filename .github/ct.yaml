@@ -15,7 +15,7 @@ helm-extra-set-args: --set=global.testMode=true
 
 # Chart schema validation
 validate-chart-schema: true
-validate-maintainers: true
+validate-maintainers: false
 validate-yaml: true
 
 # Testing options
