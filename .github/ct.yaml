@@ -28,6 +28,8 @@ target-branch: main
 # Upgrade testing (disabled for now)
 upgrade: false
 
-# Excluded charts (if needed in the future)
-# excluded-charts:
-#   - example-chart
+# Excluded charts from installation testing
+# These charts are still linted but not installed during CI
+# Reason: DocETL requires custom-built Docker images that aren't publicly available
+excluded-charts:
+  - docetl
