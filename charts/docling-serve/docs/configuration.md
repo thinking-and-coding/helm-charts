@@ -301,4 +301,4 @@ https://github.com/docling-project/docling-serve#configuration
 For configuration questions:
 - [Installation Guide](installation.md)
 - [Troubleshooting](troubleshooting.md)
-- [GitHub Issues](https://github.com/thinking-and-coding/helm-charts/issues)
+- [GitHub Issues](https://github.com/X-tructure/helm-charts/issues)

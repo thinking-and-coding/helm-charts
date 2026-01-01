@@ -31,23 +31,23 @@ Before installing the chart, ensure you have:
 
 ```bash
 # Add the Helm repository
-helm repo add thinking-and-coding https://thinking-and-coding.github.io/helm-charts
+helm repo add extreme_structure https://x-tructure.github.io/helm-charts
 
 # Update repository information
 helm repo update
 
 # Install the chart
-helm install my-docling-serve thinking-and-coding/docling-serve
+helm install my-docling-serve extreme_structure/docling-serve
 
 # Or with custom release name
-helm install docling thinking-and-coding/docling-serve --namespace docling --create-namespace
+helm install docling extreme_structure/docling-serve --namespace docling --create-namespace
 ```
 
 ### Method 2: From Git Repository
 
 ```bash
 # Clone the repository
-git clone https://github.com/thinking-and-coding/helm-charts.git
+git clone https://github.com/X-tructure/helm-charts.git
 cd helm-charts
 
 # Install the chart
@@ -309,4 +309,4 @@ kubectl delete namespace docling
 For installation issues:
 1. Check the [Troubleshooting Guide](troubleshooting.md)
 2. Review pod logs and events
-3. Report issues on [GitHub](https://github.com/thinking-and-coding/helm-charts/issues)
+3. Report issues on [GitHub](https://github.com/X-tructure/helm-charts/issues)

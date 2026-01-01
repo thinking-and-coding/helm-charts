@@ -506,7 +506,7 @@ If you can't resolve the issue:
    ```
 
 2. **Report Issue**
-   - [Chart Issues](https://github.com/thinking-and-coding/helm-charts/issues)
+   - [Chart Issues](https://github.com/X-tructure/helm-charts/issues)
    - [Docling-Serve Issues](https://github.com/docling-project/docling-serve/issues)
 
 3. **Include Information**

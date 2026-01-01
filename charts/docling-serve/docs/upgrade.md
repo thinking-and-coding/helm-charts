@@ -11,20 +11,20 @@ Guide for upgrading the Docling-Serve Helm chart to newer versions.
 helm repo update
 
 # Upgrade to latest version
-helm upgrade my-docling-serve thinking-and-coding/docling-serve
+helm upgrade my-docling-serve extreme_structure/docling-serve
 
 # Or specify version
-helm upgrade my-docling-serve thinking-and-coding/docling-serve --version 0.2.0
+helm upgrade my-docling-serve extreme_structure/docling-serve --version 0.2.0
 ```
 
 ### Upgrade with Values
 
 ```bash
 # Reuse existing values
-helm upgrade my-docling-serve thinking-and-coding/docling-serve --reuse-values
+helm upgrade my-docling-serve extreme_structure/docling-serve --reuse-values
 
 # Or with custom values file
-helm upgrade my-docling-serve thinking-and-coding/docling-serve -f my-values.yaml
+helm upgrade my-docling-serve extreme_structure/docling-serve -f my-values.yaml
 ```
 
 ### Dry Run First
@@ -32,7 +32,7 @@ helm upgrade my-docling-serve thinking-and-coding/docling-serve -f my-values.yam
 Always test upgrades with --dry-run:
 
 ```bash
-helm upgrade my-docling-serve thinking-and-coding/docling-serve --dry-run --debug
+helm upgrade my-docling-serve extreme_structure/docling-serve --dry-run --debug
 ```
 
 ## Version Compatibility
@@ -58,10 +58,10 @@ To upgrade to a newer Docling-Serve version:
 
 ```bash
 # Check available versions
-helm search repo thinking-and-coding/docling-serve --versions
+helm search repo extreme_structure/docling-serve --versions
 
 # Upgrade with new app version
-helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+helm upgrade my-docling-serve extreme_structure/docling-serve \
   --set image.tag=1.10.0 \
   --reuse-values
 ```
@@ -72,7 +72,7 @@ If you started with ephemeral storage and want persistence:
 
 ```bash
 # Enable persistence
-helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+helm upgrade my-docling-serve extreme_structure/docling-serve \
   --set scratch.persistent=true \
   --set scratch.pvc.size=50Gi \
   --reuse-values
@@ -88,7 +88,7 @@ To enable API key authentication after initial deployment:
 
 ```bash
 # Enable with auto-generated key
-helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+helm upgrade my-docling-serve extreme_structure/docling-serve \
   --set apiKey.enabled=true \
   --reuse-values
 
@@ -101,7 +101,7 @@ kubectl get secret my-docling-serve-api-key -o jsonpath='{.data.api-key}' | base
 To migrate from CPU to GPU:
 
 ```bash
-helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+helm upgrade my-docling-serve extreme_structure/docling-serve \
   -f examples/values-gpu.yaml \
   --reuse-values
 ```
@@ -115,7 +115,7 @@ helm upgrade my-docling-serve thinking-and-coding/docling-serve \
 To adjust resource allocation:
 
 ```bash
-helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+helm upgrade my-docling-serve extreme_structure/docling-serve \
   --set resources.requests.cpu=1 \
   --set resources.requests.memory=4Gi \
   --set resources.limits.cpu=4 \
@@ -245,7 +245,7 @@ helm test my-docling-serve
 2. **Reset to Defaults**
    ```bash
    # Don't use --reuse-values, provide clean values
-   helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+   helm upgrade my-docling-serve extreme_structure/docling-serve \
      -f new-values.yaml
    ```
 
@@ -264,7 +264,7 @@ helm test my-docling-serve
 
 2. **Adjust Resources**
    ```bash
-   helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+   helm upgrade my-docling-serve extreme_structure/docling-serve \
      --set resources.requests.cpu=250m \
      --set resources.requests.memory=1Gi \
      --reuse-values
@@ -278,7 +278,7 @@ Always test upgrades in development/staging:
 
 ```bash
 # Deploy test instance
-helm install docling-test thinking-and-coding/docling-serve \
+helm install docling-test extreme_structure/docling-serve \
   --namespace test \
   -f production-values.yaml
 
@@ -292,11 +292,11 @@ Pin chart versions in production:
 
 ```bash
 # Install specific version
-helm install my-docling-serve thinking-and-coding/docling-serve \
+helm install my-docling-serve extreme_structure/docling-serve \
   --version 0.1.0
 
 # Upgrade to specific version only
-helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+helm upgrade my-docling-serve extreme_structure/docling-serve \
   --version 0.2.0
 ```
 
@@ -306,7 +306,7 @@ Keep values in version control:
 
 ```bash
 # values.yaml in git
-helm upgrade my-docling-serve thinking-and-coding/docling-serve \
+helm upgrade my-docling-serve extreme_structure/docling-serve \
   -f values.yaml
 ```
 
@@ -343,7 +343,7 @@ If migrating from manual Kubernetes manifests:
 
 3. **Install Chart**
    ```bash
-   helm install my-docling-serve thinking-and-coding/docling-serve \
+   helm install my-docling-serve extreme_structure/docling-serve \
      -f migrated-values.yaml
    ```
 
@@ -357,7 +357,7 @@ If migrating from manual Kubernetes manifests:
 
 For upgrade issues:
 - [Troubleshooting Guide](troubleshooting.md)
-- [GitHub Issues](https://github.com/thinking-and-coding/helm-charts/issues)
+- [GitHub Issues](https://github.com/X-tructure/helm-charts/issues)
 - [Helm Documentation](https://helm.sh/docs/helm/helm_upgrade/)
 
 ## Changelog
